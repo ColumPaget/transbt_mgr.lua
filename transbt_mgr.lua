@@ -7,7 +7,7 @@ require("process")
 require("time")
 
 SessionID=""
-Version="1.0"
+Version="1.1"
 SettingTitles={}
 transbt_host="127.0.0.1:9091"
 
@@ -36,7 +36,7 @@ end
 
 function DrawHeader()
 Out:move(0,0)
-Out:puts("~B~wTransmission Manager v" .. Version .. "    Connected to: " .. transbt_host .. "~>~0\n\n")
+Out:puts("Transmission Manager v" .. Version .. "    Connected to: " .. transbt_host .. "~>~0\n\n")
 end
 
 
@@ -159,7 +159,7 @@ Out:puts(" Peers for torrent No.".. torrent:value("id").. "  ~m"..torrent:value(
 Out:puts(string.format(" Peers: ~c%d~0  Sending: ~c%d~0  Leaching: ~c%d~0\n", peers:size(), tonumber(torrent:value("peersSendingToUs")), tonumber(torrent:value("peersGettingFromUs")) ))
 
 Out:move(0,Out:length() -1)
-Out:puts("~B~w left/right arrow: up/down arrow: ~ymenu prev/next~w   enter: ~yselect~w   ESC: ~cback~>~0")
+Out:puts("~w up/down:~ymenu prev/next~w   enter:~yselect~w   ESC:~cback~>~0")
 
 
 Out:move(0,5)
@@ -197,7 +197,7 @@ Out:puts(" Trackers for torrent No.".. torrent:value("id").. "  ~m"..torrent:val
 Out:puts(string.format(" No of Trackers: ~c%d~0 \n", trackers:size()))
 
 Out:move(0,Out:length() -1)
-Out:puts("~B~w left/right arrow: up/down arrow: ~ymenu prev/next~w   enter: ~yselect~w   ESC: ~cback~>~0")
+Out:puts(" ~wup/down:~ymenu prev/next~w   enter:~yselect~w   ESC:~cback~>~0")
 
 
 Out:move(0,5)
@@ -276,7 +276,7 @@ do
 	Out:puts(str .. "\n")
 
 	Out:move(0,Out:length() -1)
-	Out:puts("~B~w left/right arrow: up/down arrow: ~ymenu prev/next~w   enter: ~yselect~w   ESC: ~cback~>~0")
+	Out:puts(" up/down:~ymenu prev/next~w   enter:~yselect~w   ESC:~cback~>~0")
 
 
 	Menu=terminal.TERMMENU(Out, 1, 10, Out:width() -2, 10)
@@ -548,7 +548,7 @@ Menu:clear()
 DrawHeader()
 DisplaySessionInfo()
 Out:move(0,Out:length() -1)
-Out:puts("~B~w left/right arrow: ~yswitch menu~w   up/down arrow: ~ymenu prev/next~w   enter: ~yselect~w   q: ~rexit~>~0")
+Out:puts(" left/right: ~yswitch menu~w   up/down: ~ymenu prev/next~w enter: ~yselect~w q: ~rexit~>~0")
 
 
 Out:move(0,6)
@@ -586,7 +586,7 @@ torrents=TransmissionGetTorrents()
 if torrents ~= nil
 then
 MenuType="torrents"
-Menu=terminal.TERMMENU(Out, 1, 8, Out:width() -2, Out:length()-10)
+Menu=terminal.TERMMENU(Out, 1, 8, Out:width() -2, Out:length()-11)
 
 InteractiveModeDrawMainScreen(MenuType, Menu, torrents)
 
