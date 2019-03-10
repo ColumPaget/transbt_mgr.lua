@@ -9,7 +9,7 @@ require("time")
 SessionID=""
 Version="1.0"
 SettingTitles={}
-trans_host="127.0.0.1:9091"
+transbt_host="127.0.0.1:9091"
 
 function ColorBoolean(bool)
 if bool=="true" then return "~g"..bool.."~0" end
@@ -36,7 +36,7 @@ end
 
 function DrawHeader()
 Out:move(0,0)
-Out:puts("~B~wTransmission Manager v" .. Version .. "    Connected to: " .. trans_host .. "~>~0\n\n")
+Out:puts("~B~wTransmission Manager v" .. Version .. "    Connected to: " .. transbt_host .. "~>~0\n\n")
 end
 
 
@@ -44,8 +44,11 @@ function TransmissionSingleTransact(json)
 local S, str
 local doc=nil
 
-S=stream.STREAM("http://" .. trans_host .. "/transmission/rpc", "w content-type=application/json content-length=" .. string.len(json).. " X-Transmission-Session-Id="..SessionID)
-
+-- we don't want to see 409 errors that tell us to use the supplied session-id, 
+-- as these will likely confuse that poor, dim beast we call 'the user'.
+-- so we switch off debugging for the connection to the server
+process.lu_set("Error:Silent","y")
+S=stream.STREAM("http://" .. transbt_host .. "/transmission/rpc", "w content-type=application/json content-length=" .. string.len(json).. " X-Transmission-Session-Id="..SessionID)
 
 if S ~= nil
 then
@@ -59,9 +62,9 @@ then
 	if str=="409" then return nil end
 
 	doc=S:readdoc()
-
 end
 
+process.lu_set("Error:Silent","n")
 return doc
 end
 
@@ -72,6 +75,12 @@ local doc
 
 doc=TransmissionSingleTransact(str)
 if doc==nil then doc=TransmissionSingleTransact(str) end
+
+if doc == nil 
+then
+	Out:puts("~rERROR:~0 Failed to connect to "..transbt_host.."\r\n")
+	return(nil)
+end
 
 --io.stderr:write(doc)
 return(dataparser.PARSER("json", doc))
@@ -121,14 +130,16 @@ function TorrentsList()
 local P, item, str
 
 P=TransmissionTransact('{"arguments":{ "fields": [ "id", "name", "percentDone", "totalSize", "peersSendingToUs", "peersGettingFromUs", "downloadDir", "uploadedEver" ]}, "method": "torrent-get"}')
-
-torrents=P:open("/arguments/torrents")
-item=torrents:first()
-while item ~= nil
-do
-str=string.format("%03d % 6.1f%%  % 7s % 3d  % 3d % 7s %s", item:value("id"), tonumber(item:value("percentDone"))*100, strutil.toMetric(tonumber(item:value("totalSize"))), tonumber(item:value("peersSendingToUs")), tonumber(item:value("peersGettingFromUs")), strutil.toMetric(tonumber(item:value("uploadedEver"))), item:value("name"))
-print(str)
-item=torrents:next()
+if P ~= nil
+then
+	torrents=P:open("/arguments/torrents")
+	item=torrents:first()
+	while item ~= nil
+	do
+		str=string.format("%03d % 6.1f%%  % 7s % 3d  % 3d % 7s %s", item:value("id"), tonumber(item:value("percentDone"))*100, strutil.toMetric(tonumber(item:value("totalSize"))), tonumber(item:value("peersSendingToUs")), tonumber(item:value("peersGettingFromUs")), strutil.toMetric(tonumber(item:value("uploadedEver"))), item:value("name"))
+	print(str)
+	item=torrents:next()
+	end
 end
 
 end
@@ -559,6 +570,8 @@ function TransmissionGetTorrents()
 local P
 
 P=TransmissionTransact('{"arguments":{ "fields": [ "id", "name", "comment", "percentDone", "totalSize", "status", "addedDate", "startDate", "doneDate", "activityDate", "peersSendingToUs", "peersGettingFromUs", "downloadDir", "downloadedEver", "uploadedEver", "peers", "trackers", "rateDownload", "rateUpload" ]}, "method": "torrent-get"}')
+if P == nil then return nil end
+
 return(P:open("/arguments/torrents"))
 end
 
@@ -568,9 +581,13 @@ function InteractiveMode()
 local ch, torrents, selected
 local Menu, MenuType
 
+torrents=TransmissionGetTorrents()
+
+if torrents ~= nil
+then
 MenuType="torrents"
 Menu=terminal.TERMMENU(Out, 1, 8, Out:width() -2, Out:length()-10)
-torrents=TransmissionGetTorrents()
+
 InteractiveModeDrawMainScreen(MenuType, Menu, torrents)
 
 while selected ~= "exit"
@@ -612,7 +629,7 @@ end
 
 Out:clear()
 Out:move(0,0)
-Out:reset()
+end
 
 end
 
@@ -653,7 +670,7 @@ do
 	then
 		action=value
 	else
-		trans_host=value
+		transbt_host=value
 	end
 end
 
@@ -703,3 +720,4 @@ else
 end
 
 
+Out:reset()
