@@ -7,7 +7,7 @@ require("process")
 require("time")
 
 SessionID=""
-Version="1.1"
+Version="1.2"
 SettingTitles={}
 transbt_host="127.0.0.1:9091"
 
@@ -330,18 +330,19 @@ end
 
 
 function DisplaySessionInfo()
-local P, str, port_open
+local P, values, str, port_open
 
 P=TransmissionTransact('{"arguments":{}, "method": "port-test"}')
 port_open=P:value("port-is-open")
 
 P=TransmissionTransact('{"arguments":{ "fields": [ "encryption", "lpd-enabled", "dht-enabled", "pex-enabled", "utp-enabled", "peer-port", "peer-port-random-on-start"  ]}, "method": "session-get"}')
 
-str=" Server Version: ".."~m"..P:value("version") .. "~0" .. "  LPD:"..ColorBoolean(P:value("lpd-enabled")).."  DHT:"..ColorBoolean(P:value("dht-enabled")).."  UTP:"..ColorBoolean(P:value("utp-enabled")) .. "  PEX:"..ColorBoolean(P:value("pex-enabled"))
+values=P:open("/arguments")
+str=" Server Version: ".."~m"..values:value("version") .. "~0" .. "  LPD:"..ColorBoolean(values:value("lpd-enabled")).."  DHT:"..ColorBoolean(values:value("dht-enabled")).."  UTvalues:"..ColorBoolean(values:value("utp-enabled")) .. "  PEX:"..ColorBoolean(values:value("pex-enabled"))
 
 Out:puts(str.."\n")
 
-if P:value("peer-port-random-on-start")=="true"
+if values:value("peer-port-random-on-start")=="true"
 then
 	str=" PeerPort: random"
 else
@@ -358,18 +359,18 @@ end
 Out:puts(str.."\n")
 
 str=" Global Speed Limits:   ~mUP~0: "
-if P:value("speed-limit-up-enabled")=="true"
+if values:value("speed-limit-up-enabled")=="true"
 then
-	str=str..P:value("speed-limit-up").. "Kb/s"
+	str=str..values:value("speed-limit-up").. "Kb/s"
 else
 	str=str.."~cnone~0"
 end
 
 
 str=str.."  ~cDOWN~0: "
-if P:value("speed-limit-down-enabled")=="true"
+if values:value("speed-limit-down-enabled")=="true"
 then
-	str=str..P:value("speed-limit-down").. "Kb/s"
+	str=str..values:value("speed-limit-down").. "Kb/s"
 else
 	str=str.."~cnone~0"
 end
@@ -396,7 +397,12 @@ end
 
 
 function TransmissionGetSettings()
-return(TransmissionTransact('{"arguments":{ "fields": [ "encryption", "lpd-enabled", "dht-enabled", "pex-enabled", "utp-enabled", "peer-port", "peer-port-random-on-start", "download-dir", "download-queue-size", "rename-partial-files", "script-torrent-done-filename", "seedRatioLimit", "seed-queue-size", "speed-limit-down", "speed-limit-up", "start-added-torrents", "peer-limit-global", "peer-limit-per-torrent"  ]}, "method": "session-get"}'))
+local Settings, values
+
+Settings=TransmissionTransact('{"arguments":{ "fields": [ "encryption", "lpd-enabled", "dht-enabled", "pex-enabled", "utp-enabled", "peer-port", "peer-port-random-on-start", "download-dir", "download-queue-size", "rename-partial-files", "script-torrent-done-filename", "seedRatioLimit", "seed-queue-size", "speed-limit-down", "speed-limit-up", "start-added-torrents", "peer-limit-global", "peer-limit-per-torrent"  ]}, "method": "session-get"}')
+values=Settings:open("/arguments")
+
+return values
 end
 
 
