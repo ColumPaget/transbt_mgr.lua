@@ -11,6 +11,9 @@ transbt_mgr.lua is released under version 3 of the GNU PUBLIC LICENSE.
 USAGE
 =====
 
+If you do not have binfmt_misc set up for lua, you will have to run this as 'lua transbt_mgr.lua', or maybe 'lua5.3 transbt_mgr.lua'
+
+
 ```
 transbt_mgr.lua                  - with no arguments interactive menu mode is activated
 transbt_mgr.lua list             - output a list of torrents
@@ -56,3 +59,9 @@ If the default colors aren't to your liking you can change most of them in the l
 ~0   reset to default colors
 ~>   clear to end of line
 ```
+
+
+SCREENSHOT
+==========
+
+![screenshot](transbt_mgr.png)
