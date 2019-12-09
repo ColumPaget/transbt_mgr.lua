@@ -554,7 +554,7 @@ Menu:clear()
 DrawHeader()
 DisplaySessionInfo()
 Out:move(0,Out:length() -1)
-Out:puts(" left/right: ~yswitch menu~w   up/down: ~ymenu prev/next~w enter: ~yselect~w q: ~rexit~>~0")
+Out:puts(" left/right: ~yswitch menu~0   up/down: ~ymenu prev/next~0 enter: ~yselect~0 q: ~rexit~>~0")
 
 
 Out:move(0,6)
