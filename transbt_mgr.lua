@@ -7,7 +7,7 @@ require("process")
 require("time")
 
 SessionID=""
-Version="1.2"
+Version="1.3"
 SettingTitles={}
 transbt_host="127.0.0.1:9091"
 
@@ -529,7 +529,7 @@ end
 
 
 function InteractiveModeDrawTorrentsMenu(Menu, torrents)
-local item, str
+local item, str, seeds, leeches, seeded
 
 Out:puts(" ~e<Torrents>~0   Settings\n")
 Out:puts("    ID   %down     size seeds leach  seeded  name ");
@@ -538,23 +538,63 @@ Menu:add("+ add new", "add")
 item=torrents:first()
 while item ~= nil
 do
-	str=string.format("%03d % 6.1f%%  % 7s % 5d % 5d % 7s  %s", item:value("id"), tonumber(item:value("percentDone"))*100, strutil.toMetric(tonumber(item:value("totalSize"))), tonumber(item:value("peersSendingToUs")), tonumber(item:value("peersGettingFromUs")), strutil.toMetric(tonumber(item:value("uploadedEver"))), item:value("name"))
+	val=tonumber(item:value("peersSendingToUs")) 
+	if val > 0 
+	then 
+			seeds=string.format("~b% 5d~0", val)
+	else
+			seeds=string.format("% 5d", val)
+	end
+
+	val=tonumber(item:value("peersGettingFromUs"))
+	if val > 0 
+	then 
+			leeches=string.format("~b% 5d~0", val)
+	else
+			leeches=string.format("% 5d", val)
+	end
+
+	val=tonumber(item:value("uploadedEver"))
+	if val > 0 
+	then 
+			seeded=string.format("~b% 7s~0", strutil.toMetric(val))
+	else
+			seeded=string.format("% 7s", strutil.toMetric(val))
+	end
+
+
+	str=string.format("%03d % 6.1f%%  % 7s %s %s %s  %s", item:value("id"), tonumber(item:value("percentDone"))*100, strutil.toMetric(tonumber(item:value("totalSize"))), seeds, leeches, seeded, item:value("name"))
 
 	Menu:add(str, item:value("id"))
 	item=torrents:next()
 end
 
+-- check if function exists, so we still work with earlier versions of libUseful-lua that don't have Menu:setpos
+if Menu.setpos ~= nil
+then
+if strutil.strlen(torrents_curr) > 0 then Menu:setpos(torrents_curr) end
 end
+
+end
+
+
 
 
 function InteractiveModeDrawMainScreen(MenuType, Menu, torrents)
 
+if MenuType == "torrents"
+then
+	torrents_curr=Menu:curr()
+end
+
+--corking the terminal presents screen-flash as we recreate the menu
+Out:cork()
 Out:clear()
 Menu:clear()
 DrawHeader()
 DisplaySessionInfo()
 Out:move(0,Out:length() -1)
-Out:puts(" left/right: ~yswitch menu~0   up/down: ~ymenu prev/next~0 enter: ~yselect~0 q: ~rexit~>~0")
+Out:puts(" left/right:~yswitch menu~0 up/down:~ymenu prev/next~0 enter:~yselect~0 u:~yupdate~0 a:~yadd torrent~0 q:~rexit~>~0")
 
 
 Out:move(0,6)
@@ -605,6 +645,15 @@ ch=Out:getc()
 if ch=="q" or ch=="Q"
 then 
 	break 
+elseif ch == "u"
+then
+	torrents=TransmissionGetTorrents()
+	InteractiveModeDrawMainScreen(MenuType, Menu, torrents)
+elseif ch == "a"
+then
+	DisplayAddTorrent()
+	torrents=TransmissionGetTorrents()
+	InteractiveModeDrawMainScreen(MenuType, Menu, torrents)
 elseif ch == "LEFT"
 then
 	MenuType="torrents"
