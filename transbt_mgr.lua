@@ -129,7 +129,7 @@ end
 function TorrentsList()
 local P, item, str
 
-P=TransmissionTransact('{"arguments":{ "fields": [ "id", "name", "percentDone", "totalSize", "peersSendingToUs", "peersGettingFromUs", "downloadDir", "uploadedEver" ]}, "method": "torrent-get"}')
+P=TransmissionTransact('{"arguments":{ "fields": [ "id", "name", "percentDone", "totalSize", "peersSendingToUs", "peersGettingFromUs", "downloadDir", "uploadedEver", "error", "errorString", "isStalled", "activityDate" ]}, "method": "torrent-get"}')
 if P ~= nil
 then
 	torrents=P:open("/arguments/torrents")
@@ -259,11 +259,15 @@ do
 	then
 		status="~gseeding~0"
 	end
-	
+
+	if tonumber(item:value("error")) > 0 then status="~R~wERROR~0" end
+
 	peers=item:open("peers")
 	trackers=item:open("trackers")
 	Out:puts("Torrent: ~e~m" .. item:value("name") .. "~0\n")
 	Out:puts(string.format("State: ~c%s~0  Size: ~c%s~0  PercentDownloaded: %s%6.1f%%~0\n", status, strutil.toMetric(tonumber(item:value("totalSize"))), dl_color, dl_percent));
+
+	if tonumber(item:value("error")) > 0 then Out:puts("~rERROR: ".. item:value("errorString") .."~0\n") end
 	
 	--Out:puts("Comment: "..item:value("comment").."\n");
 	Out:puts("Added: ~c" .. time.formatsecs("%Y/%m/%d", item:value("addedDate")) .. "~0  Started: ~c" .. time.formatsecs("%Y/%m/%d", item:value("startDate")) .. "~0  LastActive: ~c" .. time.formatsecs("%Y/%m/%d", item:value("activityDate")) .."~0\n")
@@ -272,6 +276,7 @@ do
 	Out:puts(string.format("Trackers: ~c%d~0\n", trackers:size()))
 	str= "Download Rate: ~c" .. strutil.toMetric(tonumber(item:value("rateDownload"))) .. "~0  Upload Rate: ~c" .. strutil.toMetric(tonumber(item:value("rateUpload")))  .. "~0"
 	str=str .. "  Downloaded: ~c" .. strutil.toMetric(tonumber(item:value("downloadedEver"))) .. "~0  Uploaded: ~c" .. strutil.toMetric(tonumber(item:value("uploadedEver"))) .."~0"
+
 	
 	Out:puts(str .. "\n")
 
@@ -529,10 +534,10 @@ end
 
 
 function InteractiveModeDrawTorrentsMenu(Menu, torrents)
-local item, str, seeds, leeches, seeded
+local item, str, seeds, leeches, seeded, val, status
 
 Out:puts(" ~e<Torrents>~0   Settings\n")
-Out:puts("    ID   %down     size seeds leach  seeded  name ");
+Out:puts("    ID  st  %down     size seeds leach  seeded  name ");
 
 Menu:add("+ add new", "add")
 item=torrents:first()
@@ -562,8 +567,28 @@ do
 			seeded=string.format("% 7s", strutil.toMetric(val))
 	end
 
+	val=tonumber(item:value("status"))
+	if val==0 
+	then
+		status="~rS~0"
+	elseif val==1 or val==2
+	then
+		status="~G~nV~0"
+	elseif val==3 or val==4
+	then
+		status="D"
+	elseif val==5 or val==6 
+	then
+		status="~ys~0"
+	else
+		status="~M~w?~0"
+	end
 
-	str=string.format("%03d % 6.1f%%  % 7s %s %s %s  %s", item:value("id"), tonumber(item:value("percentDone"))*100, strutil.toMetric(tonumber(item:value("totalSize"))), seeds, leeches, seeded, item:value("name"))
+	if tonumber(item:value("error")) > 0 then status="~R~w!~0" end
+
+
+
+	str=string.format("%03d  %s % 6.1f%%  % 7s %s %s %s  %s", item:value("id"), status, tonumber(item:value("percentDone"))*100, strutil.toMetric(tonumber(item:value("totalSize"))), seeds, leeches, seeded, item:value("name"))
 
 	Menu:add(str, item:value("id"))
 	item=torrents:next()
@@ -575,17 +600,19 @@ then
 if strutil.strlen(torrents_curr) > 0 then Menu:setpos(torrents_curr) end
 end
 
+Out:move(0,Out:length() -3)
+Out:puts("  status key:  ~M~w?~0:unknown ~R~w!~0:error  ~rS~0:stopped  ~G~nV~0:verifying  D:downloading  ~ys~0:seeding\n")
+
 end
 
 
 
 
-function InteractiveModeDrawMainScreen(MenuType, Menu, torrents)
+function InteractiveModeDrawMainScreen(MenuType, torrents)
 
-if MenuType == "torrents"
-then
-	torrents_curr=Menu:curr()
-end
+if Menu ~= nil and MenuType == "torrents" then torrents_curr=Menu:curr() end
+
+Menu=terminal.TERMMENU(Out, 1, 8, Out:width() -2, Out:length()-12)
 
 --corking the terminal presents screen-flash as we recreate the menu
 Out:cork()
@@ -606,8 +633,10 @@ else
 end
 
 Menu:draw()
+
 Out:flush()
 
+return Menu
 end
 
 
@@ -615,7 +644,7 @@ end
 function TransmissionGetTorrents()
 local P
 
-P=TransmissionTransact('{"arguments":{ "fields": [ "id", "name", "comment", "percentDone", "totalSize", "status", "addedDate", "startDate", "doneDate", "activityDate", "peersSendingToUs", "peersGettingFromUs", "downloadDir", "downloadedEver", "uploadedEver", "peers", "trackers", "rateDownload", "rateUpload" ]}, "method": "torrent-get"}')
+P=TransmissionTransact('{"arguments":{ "fields": [ "id", "name", "comment", "percentDone", "totalSize", "status", "addedDate", "startDate", "doneDate", "activityDate", "peersSendingToUs", "peersGettingFromUs", "downloadDir", "downloadedEver", "uploadedEver", "peers", "trackers", "rateDownload", "rateUpload", "error", "errorString", "isStalled", "activityDate" ]}, "method": "torrent-get"}')
 if P == nil then return nil end
 
 return(P:open("/arguments/torrents"))
@@ -625,22 +654,30 @@ end
 
 function InteractiveMode()
 local ch, torrents, selected
-local Menu, MenuType
+local Menu, MenuType, screen_redraw_needed
 
+screen_redraw_needed=true
 torrents=TransmissionGetTorrents()
 
 if torrents ~= nil
 then
 MenuType="torrents"
-Menu=terminal.TERMMENU(Out, 1, 8, Out:width() -2, Out:length()-11)
-
-InteractiveModeDrawMainScreen(MenuType, Menu, torrents)
 
 while selected ~= "exit"
 do
-selected=""
-ch=Out:getc()
 
+if screen_redraw_needed == true 
+then 
+	Menu=InteractiveModeDrawMainScreen(MenuType, torrents) 
+	screen_redraw_needed=false
+end
+
+selected=""
+
+--register window-change signal as one we watch and that interrupts system calls like 'select' or 'read'
+process.sigwatch(process.SIGWINCH)
+
+ch=Out:getc()
 
 if ch=="q" or ch=="Q"
 then 
@@ -648,25 +685,28 @@ then
 elseif ch == "u"
 then
 	torrents=TransmissionGetTorrents()
-	InteractiveModeDrawMainScreen(MenuType, Menu, torrents)
+	screen_redraw_needed=true
 elseif ch == "a"
 then
 	DisplayAddTorrent()
 	torrents=TransmissionGetTorrents()
-	InteractiveModeDrawMainScreen(MenuType, Menu, torrents)
+	screen_redraw_needed=true
 elseif ch == "LEFT"
 then
 	MenuType="torrents"
-	InteractiveModeDrawMainScreen(MenuType, Menu, torrents)
+	screen_redraw_needed=true
 elseif ch == "RIGHT"
 then
 	MenuType="settings"
-	InteractiveModeDrawMainScreen(MenuType, Menu, torrents)
-else 
+	screen_redraw_needed=true
+elseif ch ~= ""
+then
 	selected=Menu:onkey(ch)
 end
 
 
+--did we get a 'window changed' signal? Of so we need to redraw the screen
+if process.sigcheck ~= nil and process.sigcheck(process.SIGWINCH) == true then screen_redraw_needed=true end
 
 if strutil.strlen(selected) > 0 
 then
@@ -677,7 +717,7 @@ then
 		InteractiveModeSettingsMenuProcessSelection(Menu, selected)
 	end
 
-	InteractiveModeDrawMainScreen(MenuType, Menu, torrents)
+	screen_redraw_needed=true
 end
 
 end
@@ -737,6 +777,7 @@ end
 
 Out=terminal.TERM()
 SetupSettingTitles()
+
 action,args=ParseCommandLine(arg)
 
 
