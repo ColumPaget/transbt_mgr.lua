@@ -7,7 +7,7 @@ require("process")
 require("time")
 
 SessionID=""
-Version="1.4"
+Version="1.5"
 SettingTitles={}
 transbt_host="127.0.0.1:9091"
 

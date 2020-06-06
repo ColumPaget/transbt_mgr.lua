@@ -1,7 +1,7 @@
 SYNOPSIS
 ========
 
-transbt_mgr.lua is a text-mode (both menus and command-line) lua program for managing a transmission bittorrent daemon. It requires libUseful (at least version 4.0) and libUseful-lua (at least version 2.0) to be installed. 
+transbt_mgr.lua is a text-mode (both menus and command-line) lua program for managing a transmission bittorrent daemon. It requires libUseful (at least version 4.0) and libUseful-lua (at least version 2.18) to be installed. 
 
 LICENSE
 =======
